@@ -121,6 +121,7 @@
   import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
   import RestoreIcon from '@mui/icons-material/Restore';
   import { createTheme, ThemeProvider, useTheme, styled } from '@mui/material/styles';
+  import FormHelperText from '@mui/material/FormHelperText';
 
 
   {/* Exporting the MUI Component imported to be called globally  */}
@@ -250,5 +251,6 @@
     WarningIcon, 
     ApartmentIcon,
     CalendarTodayIcon,
-    RestoreIcon
+    RestoreIcon,
+    FormHelperText
   };
