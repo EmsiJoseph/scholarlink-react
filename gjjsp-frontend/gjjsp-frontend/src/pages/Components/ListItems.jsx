@@ -97,12 +97,14 @@ export const SAP_ListItems = (
     </MUI.ListSubheader>
 
       <CustomListItem to="/create" icon={<MUI.AddBoxOutlinedIcon />} secondary="Create" />
-      <CustomListItem to='/ask' 
-        icon={<MUI.Box component='img' 
-        sx={{height: 40, width: 60, marginLeft: '-20px'}} 
-        alt="The house from the offer."
-        src="https://raw.githubusercontent.com/TianMeds/image--stocks-for-coding/main/AI%20LOGO.png" /> } 
-        secondary="Generate Report" 
+      <CustomListItem 
+      to='/generate-report' 
+      
+      icon={<MUI.Box component='img' 
+      sx={{height: 40, width: 60, marginLeft: '-20px'}} 
+      alt="The house from the offer."
+      src="https://raw.githubusercontent.com/TianMeds/image--stocks-for-coding/main/AI%20LOGO.png" />} 
+      secondary="Generate Report" 
       />
   </React.Fragment>
   
