@@ -123,5 +123,21 @@ public function school()
     return $this->belongsTo(School::class);
 }
 
+
+public function scopeActiveDuringSchoolYear($query, $year)
+    {
+        return $query->where(function ($q) use ($year) {
+            $q->where('scholar_status_id', 6)
+              ->where('school_yr_started', '<=', $year)
+              ->where('school_yr_graduated', '>=', $year);
+        })->orWhere(function ($q) use ($year) {
+            $q->where('scholar_status_id', '!=', 6)
+              ->where('school_yr_started', '<=', $year)
+              ->where('school_yr_graduated', '>=', $year);
+        });
+    }
+
     protected $guarded;
 }
+
+
