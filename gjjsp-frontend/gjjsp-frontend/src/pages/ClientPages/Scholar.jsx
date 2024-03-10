@@ -435,32 +435,40 @@ export default function Scholar({state}) {
   };
   
   const exportData = (fromYear, toYear = null) => {
-    const apiUrl = '/api/export-scholars'; // Your API endpoint for exports
-    const params = toYear ? { fromYear, toYear } : { fromYear }; // Adjust params based on selection
+    const apiUrl = `/api/export-scholars`; // Your API endpoint for exports
+    const params = toYear ? { fromYear, toYear } : { fromYear: fromYear }; // Adjust params based on selection
   
-    axios({
-      url: apiUrl, 
-      method: 'GET',
+    axios.get(apiUrl, {
       params: params,
-      responseType: 'blob', 
+      responseType: 'blob', // Important for downloading files
     })
+    
     .then((response) => {
-      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const fileName = fromYear === "all" ? 'Scholars_All_Years.xlsx' : `Scholars_${fromYear}_${toYear}.xlsx`;
-      link.setAttribute('download', fileName); 
-      document.body.appendChild(link);
-      link.click();
-      window.URL.revokeObjectURL(url);
-      link.parentNode.removeChild(link); // Clean up
+      if (response.status === 200) {
+        // Process the response data as usual (e.g., create blob, download file)
+        const file = new Blob([response.data], { type: 'application/vnd.ms-excel' });
+    // Build a URL from the file
+    const fileURL = URL.createObjectURL(file);
+    // Create a temp <a /> tag to download file
+    const fileLink = document.createElement('a');
+    fileLink.href = fileURL;
+    let fileName = `Scholar Information from S.Y ${fromYear}-${parseInt(fromYear) + 1}`;
+
+if (toYear && toYear !== fromYear) {
+    fileName += ` to S.Y ${toYear}-${parseInt(toYear) + 1}`;
+}
+
+fileLink.setAttribute('download', `${fileName}.xlsx`); // Define the downloaded file name
+    // Append the anchor tag and trigger a click to download
+    document.body.appendChild(fileLink);
+    fileLink.click();
+    fileLink.parentNode.removeChild(fileLink);
   
       // Stop loading and show success message
       setLoading(false);
       setAlertOpen(true);
       setAlertMessage("Export successful!");
-    })
+    }})
     .catch((error) => {
       console.error('Export error:', error);
       // Stop loading and show error message
@@ -578,7 +586,13 @@ export default function Scholar({state}) {
 
   {/* ------------------ End of Dialog Box of the  Export ---------------*/ }     
 
-  {/* ------------------- Confirmation Dialog Box Export ------------- */}
+ 
+              
+              </MUI.Box>  
+
+            </MUI.Box>
+          </MUI.Grid>
+           {/* ------------------- Confirmation Dialog Box Export ------------- */}
   <MUI.Dialog open={exportConfirmModalOpen} onClose={() => setExportConfirmModalOpen(false)}>
   <MUI.DialogTitle id="dialogTitle" mt={2}>{'Confirm Export'}</MUI.DialogTitle>
             <MUI.DialogContent>
@@ -604,11 +618,6 @@ export default function Scholar({state}) {
   </MUI.DialogActions>
 </MUI.Dialog>
 
-              
-              </MUI.Box>  
-
-            </MUI.Box>
-          </MUI.Grid>
 
           <MUI.Grid sx={{ borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', overflow: 'auto', overflowX: 'hidden',  width: '100%' }}>
 
