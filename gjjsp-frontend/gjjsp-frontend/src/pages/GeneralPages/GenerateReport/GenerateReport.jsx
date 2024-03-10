@@ -4,10 +4,16 @@ import Layout from '../../../component/Layout/SidebarNavbar/Layout';
 import axios from '../../../api/axios';
 import { useForm, Controller } from 'react-hook-form';
 import theme from '../../../context/theme';
+import { DevTool } from "@hookform/devtools";
+import useAuthStore from '../../../store/AuthStore';
+import useLoginStore from '../../../store/LoginStore';
 
 export default function GenerateReport() {
 
- 
+  const {getAuthToken,alertOpen, setAlertOpen, errorOpen, setErrorOpen, alertMessage, setAlertMessage, errorMessage, setErrorMessage} = useAuthStore();
+
+  const { setLoading, setLoadingMessage} = useLoginStore();
+
   const { control, watch, setValue, reset } = useForm({
     defaultValues: {
       reportType: '',
@@ -20,6 +26,8 @@ export default function GenerateReport() {
   const [confirmMessage, setConfirmMessage] = useState('');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [yearOptions, setYearOptions] = useState([]);
+  const [startDate, setStartDate] = useState([]);
+  const [endDate, setEndDate] = useState([]);
 
 
   
@@ -39,21 +47,22 @@ export default function GenerateReport() {
     }, [currentYear]);
 
     // Function to get date range based on report type and year
-  const getDateRange = (reportType, year) => {
-    let startDate, endDate;
-    switch (reportType) {
-      case '1':
-        startDate = `${year}-01-01`;
-        endDate = `${year}-06-30`;
-        break;
-      case '2':
-        startDate = `${year}-07-01`;
-        endDate = `${year}-12-31`;
-        break;
-      // Case '3' is handled differently since it generates two reports
-    }
-    return { startDate, endDate };
+    const getDateRange = (reportType, year) => {
+      let startDate, endDate;
+      switch (reportType) {
+          case '1':
+              startDate = `${year}-01-01`;
+              endDate = `${year}-06-30`;
+              break;
+          case '2':
+              startDate = `${year}-07-01`;
+              endDate = `${year}-12-31`;
+              break;
+          // No need for case '3' as you handle it differently
+      }
+      return { startDate, endDate };
   };
+  
 
   const handleClear = () => {
     reset({
@@ -64,6 +73,7 @@ export default function GenerateReport() {
   };
 
   const handleGenerateClick = (event) => {
+    console.log('Generating Report...');
     event.preventDefault();
     const formData = watch();
     const year = formData.currentYear ? String(currentYear) : formData.year;
@@ -81,50 +91,82 @@ export default function GenerateReport() {
   
     setConfirmMessage(message);
     setConfirmOpen(true);
+    
   };
 
-  const handleConfirmGenerateReport = async () => {
+  const handleConfirmGenerateReport =  () => {
+    console.log('Generating Report...');
     // Close the confirmation modal first
     setConfirmOpen(false);
+    setLoading(true);
+    setLoadingMessage("Generating Report, please wait...");
   
     const formData = watch(); // Make sure to retrieve the form data again if needed
     const year = formData.currentYear ? String(currentYear) : formData.year;
   
     if (formData.reportType === '3') {
       // Generate both Mid-year and Year-end reports
+      console.log('Generating Report both...');
       const midYearRange = getDateRange('1', year);
       const yearEndRange = getDateRange('2', year);
-      await generateReport(midYearRange);
-      await generateReport(yearEndRange);
+     generateReport({ ...midYearRange, reportType: '1' });
+       enerateReport({ ...yearEndRange, reportType: '2' });
     } else {
       // Generate a single report, either Mid-year or Year-end
+      console.log(`Generating Report ${formData.reportType}...`);
       const dateRange = getDateRange(formData.reportType, year);
-      await generateReport(dateRange);
+      generateReport({ ...dateRange, reportType: formData.reportType });
     }
   };
   
   
-  const generateReport = async ({ startDate, endDate, reportType }) => {
-    // Placeholder: Replace with your actual data fetching and report generation logic
-    console.log(`Generating report of type ${reportType} for the period from ${startDate} to ${endDate}.`);
+  
+  const generateReport = ({ startDate, endDate, reportType }) => {
+    // Construct the URL with query parameters
+    const url = `/api/generate-report?startDate=${startDate}&endDate=${endDate}&reportType=${reportType}`;
 
-  
-    // Fetching data from the backend
-    try {
-      const response = await axios.get('/api/report-data', {
-        params: { startDate, endDate, reportType }
-      });
-      // Assuming the response includes the data needed for the report
-      const reportData = response.data;
-  
-      // Here you would format the reportData as needed for the report
-  
-      // Finally, trigger download of the report or display it in the UI
-      console.log('Report generated:', reportData);
-    } catch (error) {
-      console.error('Error generating report:', error);
-    }
-  };
+    // Make the API request using axios
+    axios.get(url, {
+        responseType: 'blob', // Set the response type to 'blob' for PDF data
+    })
+    .then((response) => {
+        // Check if the response has data and the pdfUrl
+        if (response.data) {
+            // Create a Blob from the PDF Stream
+            const file = new Blob(
+                [response.data], 
+                { type: 'application/pdf' }
+            );
+
+            // Build a URL from the file
+            const fileURL = URL.createObjectURL(file);
+
+            // Trigger download
+            const link = document.createElement('a');
+            link.href = fileURL;
+            link.setAttribute('download', `Report-${reportType}-${startDate}-${endDate}.pdf`); // Set the file name
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            
+            // Optionally, you can show a success message to the user
+            setAlertOpen(true);
+            setAlertMessage("Report generated successfully.");
+        }
+    })
+    .catch((error) => {
+        console.error('Error generating report:', error);
+        // Optionally, show an error message to the user
+        setErrorOpen(true);
+        setErrorMessage("Failed to generate the report. Please try again.");
+    })
+    .finally(() => {
+        // Stop the loading indicator
+        setLoading(false);
+    });
+};
+
+
   
 
 
@@ -167,7 +209,7 @@ export default function GenerateReport() {
                             >
                               <MUI.MenuItem value="1">Mid-year Accomplishment Report</MUI.MenuItem>
                               <MUI.MenuItem value="2">Year-end Accomplishment Report</MUI.MenuItem>
-                              <MUI.MenuItem value="3">Both types</MUI.MenuItem>
+                              {/* <MUI.MenuItem value="3">Both types</MUI.MenuItem> */}
                             </MUI.Select>
                           )}
                         />
@@ -262,18 +304,10 @@ export default function GenerateReport() {
                                     </MUI.DialogContent>
                                     <MUI.DialogActions>
                                       
-                              <MUI.Button onClick={() => setConfirmOpen(false)} color="primary">Cancel</MUI.Button>
-                              
-                            <MUI.Button onClick={() => {
-                              // Call the export function
-                              handleConfirmGenerateReport;
-                              // Close the modal
-                              setConfirmOpen(false);
-                            }} color="primary" variant="contained"
-                            type='submit' 
-                            sx={{backgroundColor: '#0C66E4', borderRadius: '5px', mb: 2, mt: 2 }}>
-                              Yes, Generate now
-                            </MUI.Button>
+                                    <MUI.Button onClick={() => handleConfirmGenerateReport()} color="primary" variant="contained" type='submit' sx={{backgroundColor: '#0C66E4', borderRadius: '5px', mb: 2, mt: 2 }}>
+                                    Yes, Generate now
+                                  </MUI.Button>
+
                           </MUI.DialogActions>
                         </MUI.Dialog>
 
@@ -286,6 +320,7 @@ export default function GenerateReport() {
               </MUI.Paper>
             </MUI.Grid>
           </MUI.Grid>
+          <DevTool control={control} />
         </MUI.Container>
       </MUI.ThemeProvider>
     </Layout>
