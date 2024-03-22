@@ -31,6 +31,19 @@ class GenerateReportController extends Controller
         // Fetch data based on user input and calculated month range
         $data = $this->fetchData($startDate, $endDate);
 
+        // Check for data availability
+        $isDataAvailable = $data['totalRegions'] > 0 || $data['totalProvinces'] > 0 || $data['totalCitiesMunicipalities'] > 0;
+
+
+        // Check if there's no data
+        if (!$isDataAvailable) {
+            // If no data is available, return a response indicating such, instead of proceeding to generate a PDF
+            return response()->json([
+                'message' => 'No data found for the specified date range. Please adjust the date range and try again.',
+                'dataAvailable' => false, // Explicitly indicating the lack of data
+            ]);
+        }
+
         $tableHtmls = [
             'regionTableHtml' => $this->getRegionTableHtml($data['regionData']),
             'provinceTableHtml' => $this->getProvinceTableHtml($data['provinceData']),
@@ -47,13 +60,13 @@ class GenerateReportController extends Controller
         $scholarStatusData = $this->fetchScholarStatusData($startDate, $endDate);
         $scholarStatusTableHtml = $this->getScholarStatusTableHtml($scholarStatusData);
 
-         // Generate an array of years for the report
+        // Generate an array of years for the report
         $years = $this->generateYearsArray(1990, $endDate);
 
         // Get the active scholars by year data
         $scholarsByYear = $this->getActiveScholarsByYear($years, $startDate, $endDate);
         // Generate the HTML for the Program Growth and Development table
-         $programGrowthTableHtml = $this->getProgramGrowthTableHtml($scholarsByYear);
+        $programGrowthTableHtml = $this->getProgramGrowthTableHtml($scholarsByYear);
 
 
 
@@ -252,8 +265,8 @@ class GenerateReportController extends Controller
                         <td style='border: 1px solid black; text-align: center;'>{$row['scholar_count']}</td>
                         <td style='border: 1px solid black; text-align: center;'>{$row['num_fam_mem_total']}</td>
                     </tr>";
-                    $totalScholars += $row['scholar_count'];
-                    $totalFamilyMembers += $row['num_fam_mem_total'];
+            $totalScholars += $row['scholar_count'];
+            $totalFamilyMembers += $row['num_fam_mem_total'];
         }
         $html .= "<tr>
         <th style='border: 1px solid black; text-align: center;'>Total</th>
@@ -265,7 +278,8 @@ class GenerateReportController extends Controller
     }
 
 
-    protected function fetchScholarStatusData($startDate, $endDate) {
+    protected function fetchScholarStatusData($startDate, $endDate)
+    {
 
 
         $scholarStatusData = Scholar::select('scholar_status_id', \DB::raw('count(*) as total'))
@@ -279,7 +293,8 @@ class GenerateReportController extends Controller
     }
 
 
-    public function getScholarStatusTableHtml($scholarStatusData) {
+    public function getScholarStatusTableHtml($scholarStatusData)
+    {
         $html = "<h2>Scholar Status Distribution</h2><table border='1' style='width: 100%; border-collapse: collapse;'>";
         $html .= "<thead><tr><th style='border: 1px solid black; text-align: center;'>Scholar Status</th><th style='border: 1px solid black; text-align: center;'># of Scholars</th><th style='border: 1px solid black; text-align: center;'>Percentage</th></tr></thead>";
         $html .= "<tbody>";
@@ -294,7 +309,7 @@ class GenerateReportController extends Controller
         // Now, iterate again to build the table rows with percentages
         foreach ($scholarStatusData as $status) {
             $percentage = ($status->total / $totalScholars) * 100; // Calculate percentage
-            $html .= "<tr><td style='border: 1px solid black; text-align: center;'>{$status->scholarStatus->scholar_status_name}</td><td style='border: 1px solid black; text-align: center;'>{$status->total}</td><td style='border: 1px solid black; text-align: center;'>".number_format($percentage, 2)."%</td></tr>";
+            $html .= "<tr><td style='border: 1px solid black; text-align: center;'>{$status->scholarStatus->scholar_status_name}</td><td style='border: 1px solid black; text-align: center;'>{$status->total}</td><td style='border: 1px solid black; text-align: center;'>" . number_format($percentage, 2) . "%</td></tr>";
         }
 
         // Add total row at the end
@@ -311,13 +326,13 @@ class GenerateReportController extends Controller
 
     protected function getActiveScholarsByYear($years, $startDate, $endDate)
     {
-        $scholarsByYear = collect($years)->map(function($year) use ($startDate, $endDate) {
+        $scholarsByYear = collect($years)->map(function ($year) use ($startDate, $endDate) {
             // Count the number of active scholars for the year
             $count = Scholar::where('school_yr_started', '<=', $year)
-                            ->where('school_yr_graduated', '>=', $year)
-                            ->count();
+                ->where('school_yr_graduated', '>=', $year)
+                ->count();
 
-            return (object)[
+            return (object) [
                 'year' => $year,
                 'total' => $count,
             ];
@@ -328,7 +343,8 @@ class GenerateReportController extends Controller
 
 
 
-    public function getProgramGrowthTableHtml($scholarsByYear) {
+    public function getProgramGrowthTableHtml($scholarsByYear)
+    {
 
 
         $html = "<h2>Program Growth and Development</h2>";
@@ -340,7 +356,7 @@ class GenerateReportController extends Controller
 
         foreach ($scholarsByYear as $data) {
             $yearlyPercentage = ($data->total / $totalScholars) * 100;
-            $html .= "<tr><td style='border: 1px solid black; text-align: center;'>{$data->year}</td><td style='border: 1px solid black; text-align: center;'>{$data->total}</td><td style='border: 1px solid black; text-align: center;'>".number_format($yearlyPercentage, 2)."%</td></tr>";
+            $html .= "<tr><td style='border: 1px solid black; text-align: center;'>{$data->year}</td><td style='border: 1px solid black; text-align: center;'>{$data->total}</td><td style='border: 1px solid black; text-align: center;'>" . number_format($yearlyPercentage, 2) . "%</td></tr>";
         }
 
         // Add total row at the end
