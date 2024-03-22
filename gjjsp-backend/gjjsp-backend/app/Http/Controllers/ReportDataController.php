@@ -21,6 +21,9 @@ class ReportDataController extends Controller
         $year = (new Carbon($formattedStartDate))->format('Y');
         $data = $this->fetchData($startDate, $endDate);
 
+
+
+
         return response()->json([
             'reportType' => $this->getReportTitle($reportType),
             'monthRange' => $monthRange,
@@ -36,6 +39,7 @@ class ReportDataController extends Controller
                 'visayas' => $this->fetchProjectPartnersDataByIslandGroup('visayas'),
                 'mindanao' => $this->fetchProjectPartnersDataByIslandGroup('mindanao'),
             ],
+
         ]);
     }
 
@@ -203,8 +207,8 @@ class ReportDataController extends Controller
                         <td style='border: 1px solid black; text-align: center;'>{$row['scholar_count']}</td>
                         <td style='border: 1px solid black; text-align: center;'>{$row['num_fam_mem_total']}</td>
                     </tr>";
-                    $totalScholars += $row['scholar_count'];
-                    $totalFamilyMembers += $row['num_fam_mem_total'];
+            $totalScholars += $row['scholar_count'];
+            $totalFamilyMembers += $row['num_fam_mem_total'];
         }
         $html .= "<tr>
         <th style='border: 1px solid black; text-align: center;'>Total</th>
