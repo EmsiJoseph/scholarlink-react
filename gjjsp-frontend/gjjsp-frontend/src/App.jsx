@@ -10,7 +10,7 @@ const LazyUnauthorized = lazy(() => import('./pages/GeneralPages/Unauthorized/Un
 
 //All User Imports
 const LazyCreate = lazy(() => import('./pages/ClientPages/Create'));
-const LazyAsk = lazy(() => import('./pages/GeneralPages/GenerateReport/GenerateReport'));
+const LazyGenerate = lazy(() => import('./pages/ClientPages/GenerateReport/GenerateReport'));
 
 //Admin & Manager Imports
 const LazyDashboard = lazy(() => import('./pages/ClientPages/Dashboard'));
@@ -153,7 +153,7 @@ function App() {
           path="generate-report" 
           element={
           <Suspense fallback="Scholarlink Loading...">
-            <LazyAsk/>
+            <LazyGenerate/>
           </Suspense>
           }
         />
